@@ -1,6 +1,8 @@
 ---
-title: "CARET_Lab"
-output: html_document
+title: "Lab4: CARET, Batool Alaidaroos - S19105513"
+output:
+  pdf_document: default
+  html_document: default
 date: "`r Sys.Date()`"
 ---
 
@@ -25,19 +27,25 @@ Task1: Create a Validation/Training Dataset
 You need to split the loaded dataset into two, 80% of which we will use to train our models and 20% that we will hold back as a validation dataset.
 Hint: use createDataPartition function
 ```{r}
-
+set.seed(100)
+trainRowNumbers <- createDataPartition(dataset$Species, p=0.8, list=FALSE)
+trainData <- dataset[trainRowNumbers,]
+testData <- dataset[-trainRowNumbers,]
 ```
 
 Task2: Summarize Dataset
 Use skimr library to summarize the dataset
 ```{r}
-
+library(skimr)
+skimmed <- skim_to_wide(trainData)
+skimmed
 ```
 
 Task3: split input and output
  It is the time to seperate the input attributes and  the output attributes. call the inputs attributes x and the output attribute (or class) y.
 ```{r}
-
+x=trainData[,1:4]
+y=trainData[,5]
 ```
 
 Task4: Train Control for Validation Test
@@ -59,8 +67,33 @@ Train 5 different algorithms using 'train' function:
 - Random Forest (RF)
 
 ```{r}
+# Train model using LDA
+set.seed(100)
+model_LDA = train(Species~., data = trainData, method ='lda', trControl = control, metric = metric)
+model_LDA
+```
+```{r}
+# Train model using CART
+#set.seed(100)
+model_CART = train(Species~., data = trainData, method ='rpart', trControl = control, metric = metric)
+model_CART
+```
+```{r}
+# Train model using KNN
+model_kNN = train(Species~., data = trainData, method ='knn', trControl = control, metric = metric)
+model_kNN
+```
 
+```{r}
+# Train model using SVM
+model_SVM = train(Species~., data = trainData, method ='svmRadial', trControl = control, metric = metric)
+model_SVM
+```
 
+```{r}
+# Train model using rf
+model_rf = train(Species~., data = trainData, method ='rf', trControl = control, metric = metric)
+model_rf
 ```
 
 Task6: Select the Best Model
@@ -68,17 +101,35 @@ We now have 5 models and accuracy estimations for each. We need to compare the m
 Use resamples function to complete this task
 
 ```{r}
+# Compare model performances using resample()
+models_compare <- resamples(list(LDA=model_LDA, CART=model_CART, kNN=model_kNN, SVMLinear=model_SVM, RF=model_rf))
 
+# Summary of the models performances
+summary(models_compare)
+
+# Draw box plots to compare models
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+bwplot(models_compare, scales=scales)
 
 ```
-What was the most accurate model?
-
+Q: What was the most accurate model?
+A: KNN.
 
 Task7: Make Prediction (Confusion Matrix)
 Now we want to get an idea of the accuracy of the best model on our validation set. Use 'predict' and confusionMatrix functions to complete this task.
 
 ```{r}
+predicted = predict(model_LDA, testData)
+confusionMatrix(reference = testData$Species, predicted)
 
+predicted = predict(model_kNN, testData)
+confusionMatrix(reference = testData$Species, predicted)
+
+predicted = predict(model_rf, testData)
+confusionMatrix(reference = testData$Species, predicted)
+
+predicted = predict(model_SVM, testData)
+confusionMatrix(reference = testData$Species, predicted)
 
 ```
 
